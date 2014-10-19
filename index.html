@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Scala, The Good Parts</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .inverse {
+        background: #272822;
+        color: #777872;
+        text-shadow: 0 0 20px #333;
+      }
+      .looper {
+        background-image: url(images/looper2.jpg);
+        background-size: 100%;
+      }
+      .question {
+        background: #f92672;
+        color: white;
+      }
+      .inverse h1, .inverse h2 {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+
+    <textarea id="source">
+name: looper
+layout: true
+class: looper
+
+---
+name: question
+layout: true
+class: center, middle, question
+
+---
+name: inverse
+layout: true
+class: center, middle, inverse
+
+---
+
+class: center, middle
+
+# Scala, The Good Parts
+
+<img src="images/looper.jpg" width="600px" />
+
+---
+layout: false
+
+# Me
+
+<img src="images/ambiata.png" width="300px" />
+
+- Charles O'Farrell
+- [@charlesofarrell](https://twitter.com/charlesofarrell)
+
+---
+
+## Scala, The Good Parts
+
+<img src="images/js-good-parts.jpg">
+
+---
+
+## Scala, The Good Parts (jokes aside)
+
+<a href="http://www.manning.com/bjarnason/">
+  <img src="images/book.jpg" width="300px" />
+</a>
+
+---
+
+## Correctness
+
+- Protecting code from your future self
+
+<img src="images/looper2.jpg" />
+
+---
+
+
+
+
+
+template: inverse
+
+# Default arguments
+
+---
+layout: false
+
+## Default arguments (Java)
+
+```java
+public void example(String host) {
+  example(host, 80)
+}
+
+public void example(String host, int port) {
+  ...
+}
+```
+
+---
+
+## Default arguments (Scala)
+
+```scala
+def example(host: String, port: Int = 80) = ...
+```
+
+---
+template: question
+
+## So what's the problem?
+
+---
+layout: false
+
+## Works today
+
+```scala
+def getBytes(string: String): Array[Byte] =
+  string.getBytes
+
+def elsewhere =
+  getBytes("hello")
+```
+
+---
+
+## Bugs!
+
+```scala
+def getBytes(string: String, charset: Charset = Charset("UTF-8")): Array[Byte] =
+  string.getBytes(charset)
+
+def elsewhere =
+  getBytes("hello")
+```
+
+---
+
+## Propagation
+
+```scala
+def something(i: Int = 10) =
+  ...
+```
+
+---
+
+## Propagation (Part 2)
+
+```scala
+def somethingElse(s: String, i: Int = 10) =
+  something(i)
+
+def something(i: Int = 10) =
+  ...
+```
+
+---
+
+## Propagation (Part 3)
+
+```scala
+def willItNeverEnd(s: String, i: Int = 10) =
+  somethingElse(s, i)
+
+def somethingElse(s: String, i: Int = 10) =
+  something(i)
+
+def something(i: Int = 10) =
+  ...
+```
+
+---
+
+## Reasoning
+
+- Correctness is more important than convenience
+- Default arguments are a bug waiting to happen
+- Ambiata has a rule about _no_ default arguments
+  - Pass everything explicitly
+
+---
+
+## Real use cases
+
+Instead of:
+
+```scala
+connectHTTP(host: String, port: Int = 80, ssl: Boolean = false)
+```
+
+Why not:
+
+```scala
+connectHTTP(host: String)
+connectHTTPS(host: String)
+connectHTTPPort(host: String, port: Int)
+```
+
+---
+
+# Another example
+
+```scala
+object Configuration {
+  def production(address: InetSocketAddress): Configuration = ...
+  def testing: Configuration = ...
+}
+```
+
+---
+
+## More
+
+- Interesting discussion
+  - "Default arguments are insanse"
+  - https://github.com/typelevel/wartremover/issues/116
+- Bugs in the wild
+  - https://issues.scala-lang.org/browse/SI-3322
+  - TODO FIND SOME MORE!!!
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template: inverse
+
+# Implicit configuration
+
+---
+layout: false
+
+## Handy?
+
+```scala
+def run(s: String)(implicit ec: ExecutionContext) = ...
+```
+
+```scala
+import scala.concurrent.ExecutionContext.global
+
+def doSomething: Unit =
+  run("yes")
+```
+
+---
+template: question
+
+## So what's the problem?
+
+---
+
+## Example 1 (Part 1)
+
+```scala
+import scala.concurrent.ExecutionContext.global
+
+object Part1 {
+
+  ...
+
+  def doSomething: Unit =
+    run("yes")
+}
+```
+
+---
+
+## Example 1 (Part 2)
+
+- Move the function from file A to B
+- Does this have the same runtime characteristics?
+  - And would you notice while refactoring?
+
+```scala
+import my.company.ExecutionContext.foo
+
+object Part2 {
+
+  ....
+
+  def doSomething: Unit =
+    run("yes")
+}
+```
+
+---
+
+## Example 2 (Part 1)
+
+```scala
+object Encoder {
+
+  def getBytes(s: String): Array[Byte] =
+    s.getBytes
+}
+
+object Example2 {
+  
+  import com.company.Charset.utf8
+
+  def doSomething: Unit =
+    println(Encoder.getBytes("hello"))
+}
+
+```
+
+---
+
+## Example 2 (Part 2)
+
+```scala
+object Encoder {
+
+  def getBytes(s: String)(implicit charset: Charset): Array[Byte] =
+    s.getBytes(charset)
+}
+```
+
+---
+
+template: looper
+
+---
+
+## What we do at Ambiata
+
+- Pass arguments manually
+  - Crazy!
+  - But no accidental bugs!!!
+- Use Reader Monad
+  - Just functions
+  - Talk for another day
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+template: inverse
+
+# Pattern Matching
+
+---
+layout: false
+
+## ADTs FTW
+
+```scala
+sealed trait Encoding
+case object StringEncoding extends Encoding
+case object IntEncoding extends Encoding
+```
+
+```scala
+def asString(encoding: Encoding): String = encoding match {
+  case StringEncoding => "string"
+  case IntEncoding    => "int"
+}
+```
+
+---
+
+template: question
+
+## So far so good
+
+---
+
+## Until...
+
+```scala
+case object DateEncoding extends Encoding
+```
+
+---
+
+## Boom!
+
+```scala
+> asString(DateEncoding)
+scala.matchError: DateEncoding
+  at .asString()
+```
+
+---
+
+template: looper
+
+---
+
+## Warnings are useless
+
+```
+[warn] .../src/main/scala/PatternMatching.scala:8: match may not be exhaustive.
+[warn] It would fail on the following input: DateEncoding
+[warn]   def asString(encoding: Encoding): String = encoding match {
+[warn]                                              ^
+[warn]
+```
+
+---
+
+## Warnings as errors
+
+```scala
+scalacOptions in Compile ++= Seq("-Xfatal-warnings")
+```
+
+- Scala equivalent of `-Wall -Werror`
+
+---
+
+## Phew
+
+```
+[error] .../src/main/scala/PatternMatching.scala:8: match may not be exhaustive.
+[error] It would fail on the following input: DateEncoding
+[error]   def asString(encoding: Encoding): String = encoding match {
+[error]                                              ^
+[error]
+```
+
+---
+
+## Wildcards are bad too
+
+```scala
+def asString(encoding: Encoding): String = encoding match {
+  case StringEncoding => "string"
+  case _              => "int"
+}
+```
+
+```
+> asString(DateEncoding)
+res0: String = int
+```
+
+---
+
+## Word of warning
+
+- Exhaustive checking in Scala is not perfect
+
+```scala
+def asString(encoding: Encoding): String = encoding match {
+  case StringEncoding if ... => "string"
+}
+```
+
+```
+> asString(DateEncoding)
+scala.MatchError: DateEncoding (of class PatternMatching$DateEncoding$)
+        at PatternMatching$.asString2(PatternMatching.scala:13)
+```
+
+---
+
+## Fold
+
+```scala
+trait Encoding {
+  def fold[A](s: => A, i: => A): A = this match {
+    case StringEncoding => s
+    case IntEncoding    => i
+  }
+}
+
+def asString(encoding: Encoding): String =
+  encoding.fold("string", "int")
+```
+
+---
+
+
+
+
+
+
+
+
+template: inverse
+
+# Value Discard
+
+---
+layout: false
+
+## Spot the bug
+
+```scala
+
+def load(id: Int): IO[Dictionary] = ...
+def save(id: Int, dictionary: Dictionary): IO[Unit] = ...
+
+def setName(id: Int, name: String) =
+    load(id).map(dictionary => save(id, dictionary.copy(name = name)))
+
+def run: Unit =
+  defName(123, "foo").unsafePerformIO()
+```
+
+---
+
+## Whoops
+
+```scala
+
+def setName(id: String, name: String): IO[IO[Unit]] =
+    load(id).map(dictionary => save(id, dictionary.copy(name = name)))
+```
+
+---
+
+template: looper
+
+---
+
+## With return types
+
+```scala
+[error] .../src/main/scala/ValueDiscard.scala:14: type mismatch;
+[error]  found   : IO[Dictionary]
+[error]  required: IO[Unit]
+[error]     load(id).map(dictionary => save(id, dictionary.copy(name = name)))
+[error]                 ^
+```
+
+---
+
+## Compiler flag
+
+```scala
+scalacOptions in Compile ++= Seq(
+    "-Ywarn-value-discard"
+  , "-Xfatal-warnings"
+  )
+```
+
+---
+
+## Much better
+
+```
+[error] .../src/main/scala/ValueDiscard.scala:17: discarded non-Unit value
+[error]     setName("a", "b").unsafePerformIO()
+[error]
+```
+
+---
+
+## Fixed
+
+```scala
+
+def setName(id: String, name: String): IO[Unit] =
+    load(id).flatMap(dictionary => save(dictionary.copy(name = name)))
+```
+
+---
+
+
+
+
+
+
+
+
+template: inverse
+
+# Overloading
+
+---
+layout: false
+
+## 
+
+```scala
+def foo(s: String): Unit = ???
+def foo(i: Int): Unit = ???
+```
+
+- TODO TODO TODO
+
+---
+
+## Worse
+
+```scala
+def foo(s: String): Unit = ???
+def foo(i: Any): Unit = ???
+```
+
+- What happens if you delete the `String` version?
+
+---
+
+template: looper
+
+---
+
+## More
+
+- http://stackoverflow.com/questions/2510108/why-avoid-method-overloading
+
+---
+
+
+
+
+
+
+
+template: inverse
+
+# Types vs Constructors
+
+- TODO NOT HAPPY WITH THIS
+
+---
+layout: false
+
+## ADTs again
+
+```scala
+sealed trait Encoding
+case object StringEncoding extends Encoding
+case object IntEncoding extends Encoding
+```
+
+---
+
+## Type inference
+
+```scala
+def fromString(s: String): Encoding =
+  Option(???).map(_ => IntEncoding).getOrElse(StringEncoding)
+```
+
+- TODO SHOW A BETTER EXAMPLE of the compiler failing
+
+---
+
+## TODO TODO
+
+- TODO WHY IS THIS BAD?!?
+
+---
+
+## Smell
+
+```scala
+def asString(encoding: Encoding): String = encoding match {
+  case p: PrimitiveEncoding => asStringP(p)
+}
+
+def asStringP(encoding: PrimitiveEncoding): String = encoding {
+  case StringEncoding => "string"
+}
+```
+
+---
+
+## Instead
+
+```scala
+case class Primitive(p: PrimitiveEncoding) extends Encoding
+
+sealed trait PrimitiveEncoding
+case object StringEncoding extends PrimitiveEncoding
+```
+
+```scala
+def asString(encoding: Encoding): String = encoding match {
+  case PrimitiveEncoding(p) => asStringP(p)
+}
+
+def asStringP(encoding: PrimitiveEncoding): String = encoding {
+  case StringEncoding => "string"
+}
+```
+
+---
+
+
+
+
+
+
+
+template: inverse
+
+# Performance Complexity
+
+- TODO NOT HAPPPY WITH THIS
+
+---
+layout:false
+
+## List vs Seq vs Stream
+
+```scala
+def slow(s: Seq[Int]): Int =
+  s.sum
+
+def lazy(s: Seq[String]): Seq[String] =
+  s.map(_.toUpperCase)
+```
+
+---
+
+## Until...
+
+```scala
+def lazy(s: Seq[String]): Seq[String] =
+  s.TODO().map(_.toUpperCase)
+```
+
+---
+
+template: looper
+
+---
+
+## Be explicit
+
+```scala
+def slow(s: List[Int]): Int =
+  s.sum
+
+def lazy(s: Stream[String]): Stream[String] =
+  s.map(_.toUpperCase)
+```
+
+---
+
+
+
+
+
+template: inverse
+
+# Dependency Management
+
+---
+layout:false
+
+## Problem
+
+- Managing multiple projects/repositories can be painful
+  - Development environment
+  - Making changes across projects
+  - Propagating changes upstream
+
+---
+
+## What happens if...
+
+- Depend on `libraryX` @ `1.2-SNAPSHOT`
+- Deploy `productionY`
+- Someone else makes breaking changes to `libraryX`
+- Find bug in `productionY`
+- Rebuild and deploy again
+- Boom!
+  - Reproducable builds are a thing
+
+---
+
+template: looper
+
+---
+
+## Solution (Part 1)
+
+- Friends don't let friends use Maven SNAPSHOTs
+- Always rely on exact dependencies
+
+```scala
+libraryDependencies ++= Seq(
+    "com.ambiata" %% "mundane" % "1.2.3"
+  , "com.ambiata" %% "poacher" % "4.5.6"
+  )
+```
+
+---
+
+## Problem - Versions
+
+- 3.0.0
+- 3.0.1
+- 3.1.0
+- ...
+
+
+- How do you choose the version number?
+- What does it even mean?
+- How often do you release?
+
+---
+
+## Promulgate
+
+- https://github.com/ambiata/promulgate
+
+---
+
+## Very simple idea
+
+- Release on _every_ build
+- Use the Git hash
+  - Easy to lookup what changed
+- Upload to S3
+- That's it!
+
+---
+
+## Not quite
+
+```
+ Lastmodified              Name   
+ 2014-05-22T01:34:06.000Z  mundane_2.11/1.0.0-c5dab77/jars/mundane_2.11.jar 
+ 2014-02-22T01:34:06.000Z  mundane_2.11/1.0.0-db04e5e/jars/mundane_2.11.jar 
+ 2014-04-22T01:34:06.000Z  mundane_2.11/1.0.0-1c7dddc/jars/mundane_2.11.jar 
+ 2014-03-22T01:34:06.000Z  mundane_2.11/1.0.0-7e702b2/jars/mundane_2.11.jar 
+```
+
+- What is the latest?
+
+---
+
+## Timestamp
+
+```
+ Lastmodified              Name   
+ 2014-03-22T01:34:06.000Z  mundane_2.11/1.0.0-20140322013124-c5dab77/jars/mundane_2.11.jar 
+ 2014-04-22T01:34:06.000Z  mundane_2.11/1.0.0-20140422013124-db04e5e/jars/mundane_2.11.jar 
+ 2014-05-22T01:34:06.000Z  mundane_2.11/1.0.0-20140522013124-1c7dddc/jars/mundane_2.11.jar 
+ 2014-06-22T01:34:06.000Z  mundane_2.11/1.0.0-20140622013124-7e702b2/jars/mundane_2.11.jar 
+```
+
+---
+
+## Future
+
+- Definitely not ideal
+- Upgrading downstream dependencies and ensuring compatibility
+- [Annex](http://www.youtube.com/watch?v=JjYAnBhF2JU)
+
+---
+
+## SBT Tip: Source dependencies
+
+```scala
+object source extends Build {
+
+  lazy val ref =
+    Project("ivory", file("."))
+      .dependsOn(RootProject(file("../mundane")))
+}
+```
+
+---
+
+
+
+template: inverse
+
+# Conclusion
+
+<img src="images/luke.jpg" />
+
+---
+
+layout: false
+
+# Conclusion
+
+- Correctness over convenience. Always.
+- Watching out for your future self!
+- Check out [Looper](http://www.imdb.com/title/tt1276104/). :)
+
+---
+
+## Read this. Seriously.
+
+<a href="http://www.manning.com/bjarnason/">
+  <img src="images/book.jpg" width="300px" />
+</a>
+
+
+
+    </textarea>
+    <script src="http://gnab.github.io/remark/downloads/remark-latest.min.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>.
