@@ -738,21 +738,12 @@ layout:false
 
 ## List vs Seq vs Stream
 
-```scala
-def slow(s: Seq[Int]): Int =
-  s.sum
+- 
 
-def lazy(s: Seq[String]): Seq[String] =
-  s.map(_.toUpperCase)
-```
-
----
-
-## Until...
+- Is this constant time?
 
 ```scala
-def lazy(s: Seq[String]): Seq[String] =
-  s.TODO().map(_.toUpperCase)
+def add[A](s: Seq[A], a: A): Seq[A] = ...
 ```
 
 ---
@@ -763,13 +754,7 @@ template: looper
 
 ## Be explicit
 
-```scala
-def slow(s: List[Int]): Int =
-  s.sum
-
-def lazy(s: Stream[String]): Stream[String] =
-  s.map(_.toUpperCase)
-```
+- TODO
 
 ---
 
