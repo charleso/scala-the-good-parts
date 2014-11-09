@@ -65,6 +65,10 @@
         color: black;
         background-color: white;
       }
+      .image-last h1 {
+        right: 0;
+        bottom: 100px;
+      }
       .remark-code, .remark-inline-code {
         font-family: 'Ubuntu Mono';
       }
@@ -113,6 +117,11 @@ layout: true
 class: center, middle, image, image-white
 
 ---
+name: image-last
+layout: true
+class: center, middle, image, image-last
+
+---
 name: ambiata
 layout: true
 class: ambiata
@@ -142,7 +151,7 @@ class: center, middle, inverse
 class: center, middle
 template: image
 
-<img src="images/js-good-parts-2.jpg" />
+<img src="images/scala-good-parts.jpg" />
 
 # Scala, The Good Parts
 
@@ -157,6 +166,19 @@ template: inverse
 template: ambiata-full
 
 # How We Do Shit At Ambiata
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+
 ## (To Stay Sane)
 
 ---
@@ -198,7 +220,7 @@ def elsewhere: Array[Byte] =
 
 ---
 
-## Bugs
+## Breaks tomorrow
 
 ```scala
 import scala.io._
@@ -219,8 +241,8 @@ template: ambiata
 ## Ambiata
 
 - Correctness is more important than convenience
-- Default arguments are a bug waiting to happen
-- Ambiata has a rule about _no_ default arguments
+- Default arguments are bugs waiting to happen
+- We have a rule about _no_ default arguments
   - Pass everything explicitly
 
 ---
@@ -255,7 +277,7 @@ template: inverse
 ---
 layout: false
 
-## Use implicit arguments instead!
+## Looks familar?
 
 ```scala
 object Encoder {
@@ -277,8 +299,10 @@ object Example {
   
   implicit val codec = Codec.UTF8
 
-  def doSomething: Unit =
-    println(Encoder.getBytes("hello 草"))
+  ...
+
+  def doSomething: Array[Byte] =
+    Encoder.getBytes("hello 草")
 }
 ```
 
@@ -298,8 +322,8 @@ import scala.io._
 
 object Example2 {
 
-  def doSomething: Unit =
-    println(Encoder.getBytes("hello 草"))
+  def doSomething: Array[Byte] =
+    Encoder.getBytes("hello 草")
 }
 ```
 
@@ -794,7 +818,7 @@ layout:false
 ```scala
 def foo[A](a: A, s: Seq[A]): Seq[A] = ...
 
-foo(1, (1 to 10).toList)
+foo(1, (1 to 100).toList)
 ```
 
 ---
@@ -805,7 +829,7 @@ foo(1, (1 to 10).toList)
 def prepend[A](a: A, s: Seq[A]): Seq[A] =
   s :+ a
 
-prepend(1, (1 to 10).toList)
+prepend(1, (1 to 100).toList)
 ```
 
 ---
@@ -1001,13 +1025,13 @@ layout: false
 
 ---
 
-template: image
+template: image-last
 
 <a href="http://www.manning.com/bjarnason/">
   <img src="images/book2.jpg" />
 </a>
 
-## Read this. Seriously.
+# Read this. Seriously.
 
 
 
