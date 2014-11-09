@@ -65,6 +65,8 @@ layout: false
 
 <img src="images/ambiata.png" width="300px" />
 
+<img src="http://ambiata.com/images/ambiata_avatar.png" />
+
 - Charles O'Farrell
 - [@charlesofarrell](https://twitter.com/charlesofarrell)
 
@@ -92,7 +94,16 @@ layout: false
 
 ---
 
+## Grab bag
 
+- Default arguments
+- Implicit configuration
+- Value discard
+- Exhausive checking
+- Performance XXXX
+- Automatic releases
+
+---
 
 
 
@@ -167,11 +178,11 @@ def something(i: Int = 10) =
 ## Propagation (Part 2)
 
 ```scala
-def somethingElse(s: String, i: Int = 10) =
-  something(i)
-
 def something(i: Int = 10) =
   ...
+
+def somethingElse(s: String, i: Int = 10) =
+  something(i)
 ```
 
 ---
@@ -179,14 +190,14 @@ def something(i: Int = 10) =
 ## Propagation (Part 3)
 
 ```scala
-def willItNeverEnd(s: String, i: Int = 10) =
-  somethingElse(s, i)
+def something(i: Int = 10) =
+  ...
 
 def somethingElse(s: String, i: Int = 10) =
   something(i)
 
-def something(i: Int = 10) =
-  ...
+def willItNeverEnd(s: String, i: Int = 10) =
+  somethingElse(s, i)
 ```
 
 ---
@@ -232,7 +243,7 @@ object Configuration {
 ## More
 
 - Interesting discussion
-  - "Default arguments are insanse"
+  - "Default arguments are insane"
   - https://github.com/typelevel/wartremover/issues/116
 - Bugs in the wild
   - https://issues.scala-lang.org/browse/SI-3322
@@ -260,90 +271,47 @@ template: inverse
 ---
 layout: false
 
-## Handy?
+## Use implicit arguments instead!
 
 ```scala
-def run(s: String)(implicit ec: ExecutionContext) = ...
-```
+object Encoder {
 
-```scala
-import scala.concurrent.ExecutionContext.global
-
-def doSomething: Unit =
-  run("yes")
-```
-
----
-template: question
-
-## So what's the problem?
-
----
-
-## Example 1 (Part 1)
-
-```scala
-import scala.concurrent.ExecutionContext.global
-
-object Part1 {
-
-  ...
-
-  def doSomething: Unit =
-    run("yes")
+  def getBytes(s: String)(implicit codec: Codec): Array[Byte] =
+    s.getBytes(codec.charSet)
 }
 ```
 
 ---
 
-## Example 1 (Part 2)
+## Example
+
+```scala
+import scala.io._
+
+object Example {
+  
+  implicit val codec = Codec.UTF8
+
+  def doSomething: Unit =
+    println(Encoder.getBytes("hello 草"))
+}
+```
+
+---
+
+## Can you move code?
 
 - Move the function from file A to B
-- Does this have the same runtime characteristics?
+- Does this have the same behaviour/meaning?
   - And would you notice while refactoring?
 
 ```scala
-import my.company.ExecutionContext.foo
-
-object Part2 {
-
-  ....
-
-  def doSomething: Unit =
-    run("yes")
-}
-```
-
----
-
-## Example 2 (Part 1)
-
-```scala
-object Encoder {
-
-  def getBytes(s: String): Array[Byte] =
-    s.getBytes
-}
+import scala.io._
 
 object Example2 {
-  
-  import com.company.Charset.utf8
 
   def doSomething: Unit =
-    println(Encoder.getBytes("hello"))
-}
-
-```
-
----
-
-## Example 2 (Part 2)
-
-```scala
-object Encoder {
-
-  def getBytes(s: String)(implicit charset: Charset): Array[Byte] =
-    s.getBytes(charset)
+    println(Encoder.getBytes("hello 草"))
 }
 ```
 
@@ -353,13 +321,86 @@ template: looper
 
 ---
 
+## Funny story
+
+- I actually got a bug trying to write that example
+- Implicit scoping rules, picked up wrong encoding :/
+
+---
+
+## Implicit resources
+
+```scala
+def run(s: String)(implicit ec: ExecutionContext) = ...
+
+object Pool {
+  implicit val tc: ExecutionContext =
+    ExecutionContext.fromExecutor(java.util.concurrent.Executors.newCachedThreadPool())
+}
+
+import Pool._
+
+object Main {
+  def args(args: Array[String]): Unit = {
+    run("hello")
+    // Will this program terminate?
+  }
+}
+```
+
+---
+
+## Implicit resources
+
+- Who is responsible for closing/cleaning-up resources?
+- http://stackoverflow.com/questions/25879496/how-to-exit-a-program-properly-when-using-scalaz-futures-and-the-timed-function
+
+---
+template: question
+
+# At Ambiata we have this crazy technique...
+
+---
+template: question
+
+# ...function arguments
+
+---
+
+## Crazy talk
+
+```scala
+def run(s: String, ec: ExecutionContext) = ...
+
+object Pool {
+  def withEC[A](f: ExecutionContext => A): A = {
+    val pool = java.util.concurrent.Executors.newCachedThreadPool
+    val result = f(ExecutionContext.fromExecutor(pool))
+    pool.shutdown()
+    result
+  }
+}
+
+object Main {
+  def args(args: Array[String]): Unit = {
+    Pool.withEC { ec =>
+      run("hello", ec)
+    }
+  }
+}
+```
+
+---
+
+template: ambiata
+
 ## What we do at Ambiata
 
 - Pass arguments manually
   - Crazy!
   - But no accidental bugs!!!
 - Use Reader Monad
-  - Just functions
+  - Just function composition
   - Talk for another day
 
 ---
@@ -511,6 +552,23 @@ def asString(encoding: Encoding): String =
 
 ---
 
+## Fold
+
+```scala
+trait Encoding {
+  def fold[A](s: => A, i: => A, d: => A): A = this match {
+    case StringEncoding => s
+    case IntEncoding    => i
+    case DateEncoding   => d
+  }
+}
+
+def asString(encoding: Encoding): String =
+  encoding.fold("string", "int", "date")
+```
+
+---
+
 
 
 
@@ -532,11 +590,10 @@ layout: false
 def load(id: Int): IO[Dictionary] = ...
 def save(id: Int, dictionary: Dictionary): IO[Unit] = ...
 
-def setName(id: Int, name: String) =
-    load(id).map(dictionary => save(id, dictionary.copy(name = name)))
-
-def run: Unit =
-  defName(123, "foo").unsafePerformIO()
+def setName(id: Int, name: String): IO[Unit] =
+  load(id).map(dictionary => 
+    save(id, dictionary.copy(name = name))
+  )
 ```
 
 ---
@@ -546,7 +603,9 @@ def run: Unit =
 ```scala
 
 def setName(id: String, name: String): IO[IO[Unit]] =
-    load(id).map(dictionary => save(id, dictionary.copy(name = name)))
+    load(id).map(dictionary =>
+      save(id, dictionary.copy(name = name))
+    )
 ```
 
 ---
@@ -555,19 +614,27 @@ template: looper
 
 ---
 
-## With return types
+## Compiler flag
 
 ```scala
-[error] .../src/main/scala/ValueDiscard.scala:14: type mismatch;
-[error]  found   : IO[Dictionary]
-[error]  required: IO[Unit]
-[error]     load(id).map(dictionary => save(id, dictionary.copy(name = name)))
-[error]                 ^
+scalacOptions in Compile ++= Seq(
+    "-Ywarn-value-discard"
+  )
 ```
 
 ---
 
-## Compiler flag
+## Warning
+
+```
+[warn] .../src/main/scala/ValueDiscard.scala:18: discarded non-Unit value
+[warn]     load(id).map(dictionary => save(id, dictionary.copy(name = name)))
+[warn]                                    ^
+```
+
+---
+
+## Errors FTW
 
 ```scala
 scalacOptions in Compile ++= Seq(
@@ -581,9 +648,9 @@ scalacOptions in Compile ++= Seq(
 ## Much better
 
 ```
-[error] .../src/main/scala/ValueDiscard.scala:17: discarded non-Unit value
-[error]     setName("a", "b").unsafePerformIO()
-[error]
+[error] .../src/main/scala/ValueDiscard.scala:18: discarded non-Unit value
+[error]     load(id).map(dictionary => save(id, dictionary.copy(name = name)))
+[error]                                    ^
 ```
 
 ---
@@ -593,12 +660,14 @@ scalacOptions in Compile ++= Seq(
 ```scala
 
 def setName(id: String, name: String): IO[Unit] =
-    load(id).flatMap(dictionary => save(dictionary.copy(name = name)))
+  load(id).flatMap(dictionary =>
+    save(id, dictionary.copy(name = name))
+  )
 ```
 
 ---
 
-## Examples
+## Burned in Real Life
 
 - https://github.com/ambiata/mundane/commit/25ec5a32b952f1e8ce4f0516a3c52e4520ae05d5
 
@@ -607,46 +676,117 @@ def setName(id: String, name: String): IO[Unit] =
 
 
 
+template: inverse
+
+# Type-Safe Equals
+
+---
+## Wat
+
+```scala
+def foo: String =
+  "1"
+
+def bar: Int
+  1
+
+def wat: Boolean
+  foo == bar
+
+scala> wat
+res0: Boolean = false
+```
+
+---
+template: question
+
+## Why the f**k does that even compile?
+
+---
+## Scalaz FTW
+
+```scala
+import scalaz._, Scalaz._
+
+def foo: String =
+  "1"
+
+def bar: Int
+  1
+
+// Doesn't compile
+// def phew: Boolean
+//  foo === bar
+```
+
+---
+
+## Another example
+
+```scala
+trait Seq[A] {
+  def contains(elem: Any): Boolean = { ... }
+}
+
+scala> List("1").contains(1)
+res0: Boolean = false
+```
+
+---
+
+
+
 
 
 
 
 template: inverse
 
-# Overloading
+# Return Types
 
 ---
-layout: false
-
-## 
+## What is the return type?
 
 ```scala
-def foo(s: String): Unit = ???
-def foo(i: Int): Unit = ???
-```
+def foo(strings: List[String]) = for {
+    s &lt;- strings
+  } yield bar(s)
 
-- TODO TODO TODO
+val size = foo(List("a", "b", "c")).size
+```
 
 ---
+template: question
 
-## Worse
-
-```scala
-def foo(s: String): Unit = ???
-def foo(i: Any): Unit = ???
+## What happens if 'bar' changes?
 ```
-
-- What happens if you delete the `String` version?
 
 ---
 
 template: looper
 
 ---
+## Always use return types
 
-## More
+```scala
+def foo1(strings: List[String]): List[String] = for {
+    s &lt;- strings
+  } yield bar1(s)
 
-- http://stackoverflow.com/questions/2510108/why-avoid-method-overloading
+def foo2(strings: List[String]): List[List[String]] = for {
+    s &lt;- strings
+  } yield bar2(s)
+```
+
+---
+
+template: ambiata
+
+# Ambiata
+
+- _Always_ have return types for top-level methods
+  - No surprises
+  - Easier to review
 
 ---
 
@@ -658,111 +798,76 @@ template: looper
 
 template: inverse
 
-# Types vs Constructors
-
-- TODO NOT HAPPY WITH THIS
-
----
-layout: false
-
-## ADTs again
-
-```scala
-sealed trait Encoding
-case object StringEncoding extends Encoding
-case object IntEncoding extends Encoding
-```
-
----
-
-## Type inference
-
-```scala
-def fromString(s: String): Encoding =
-  Option(???).map(_ => IntEncoding).getOrElse(StringEncoding)
-```
-
-- TODO SHOW A BETTER EXAMPLE of the compiler failing
-
----
-
-## TODO TODO
-
-- TODO WHY IS THIS BAD?!?
-
----
-
-## Smell
-
-```scala
-def asString(encoding: Encoding): String = encoding match {
-  case p: PrimitiveEncoding => asStringP(p)
-}
-
-def asStringP(encoding: PrimitiveEncoding): String = encoding {
-  case StringEncoding => "string"
-}
-```
-
----
-
-## Instead
-
-```scala
-case class Primitive(p: PrimitiveEncoding) extends Encoding
-
-sealed trait PrimitiveEncoding
-case object StringEncoding extends PrimitiveEncoding
-```
-
-```scala
-def asString(encoding: Encoding): String = encoding match {
-  case PrimitiveEncoding(p) => asStringP(p)
-}
-
-def asStringP(encoding: PrimitiveEncoding): String = encoding {
-  case StringEncoding => "string"
-}
-```
-
----
-
-
-
-
-
-
-
-template: inverse
-
-# Performance Complexity
-
-- TODO NOT HAPPPY WITH THIS
+# Seq
 
 ---
 layout:false
 
-## List vs Seq vs Stream
-
-- 
-
-- Is this constant time?
+## What is the runtime performance of this function?
 
 ```scala
-def add[A](s: Seq[A], a: A): Seq[A] = ...
+def foo[A](a: A, s: Seq[A]): Seq[A] = { ... }
+
+foo(1, (1 to 10).toList)
+```
+
+## What about now?
+
+```scala
+def prepend[A](a: A, s: Seq[A]): Seq[A] =
+  s :+ a
+
+prepend(1, (1 to 10).toList)
+```
+
+## What about NOW?
+
+```scala
+def foo[A](s: Seq[A]): Seq[A] =
+  s.size
+
+foo(Stream.continually(1))
 ```
 
 ---
 
-template: looper
+template: ambiata
+
+# Ambiata
+
+- _Never_ use `Seq`
+  - Honestly we mostly use `List`
 
 ---
 
-## Be explicit
 
-- TODO
+
+
+
+
+
+
+
+
+template: inverse
+
+# Property-based testing
 
 ---
+layout:false
+
+## ScalaCheck
+
+- ScalaCheck is the norm
+  - Only a handful of "unit" tests
+- Has changed my life
+- So important it deserves it's own talk
+  - Declan is speaking next month
+- Do it. Seriously.
+
+---
+
+
 
 
 
@@ -773,44 +878,17 @@ template: inverse
 # Dependency Management
 
 ---
-layout:false
 
-## Problem
-
-- Managing multiple projects/repositories can be painful
-  - Development environment
-  - Making changes across projects
-  - Propagating changes upstream
+<img src="images/ambiata_github.png" width="500" /> 
 
 ---
 
-## What happens if...
+## Ambiata
 
-- Depend on `libraryX` @ `1.2-SNAPSHOT`
-- Deploy `productionY`
-- Someone else makes breaking changes to `libraryX`
-- Find bug in `productionY`
-- Rebuild and deploy again
-- Boom!
-  - Reproducable builds are a thing
-
----
-
-template: looper
-
----
-
-## Solution (Part 1)
-
-- Friends don't let friends use Maven SNAPSHOTs
-- Always rely on exact dependencies
-
-```scala
-libraryDependencies ++= Seq(
-    "com.ambiata" %% "mundane" % "1.2.3"
-  , "com.ambiata" %% "poacher" % "4.5.6"
-  )
-```
+- We like small, self-contained modules
+- But, how often do we "release"?
+- Maven SNAPSHOTs are evil
+  - Non-repeatable builds
 
 ---
 
@@ -824,7 +902,6 @@ libraryDependencies ++= Seq(
 
 - How do you choose the version number?
 - What does it even mean?
-- How often do you release?
 
 ---
 
@@ -832,40 +909,51 @@ libraryDependencies ++= Seq(
 
 - https://github.com/ambiata/promulgate
 
+```scala
+import com.ambiata.promulgate.project.ProjectPlugin._
+
+object build extends Build {
+  lazy val core = Project(
+    settings = promulgate.library("com.ambiata.something", "ambiata-oss")
+  )
+}
+```
+
 ---
 
 ## Very simple idea
 
 - Release on _every_ build
 - Use the Git hash
-  - Easy to lookup what changed
+  - Easy to know/find what changed
 - Upload to S3
 - That's it!
+- Can be done in [insert build tool]
 
 ---
 
-## Not quite
+## Conflict
+
+- Which one do you take?
 
 ```
- Lastmodified              Name   
- 2014-05-22T01:34:06.000Z  mundane_2.11/1.0.0-c5dab77/jars/mundane_2.11.jar 
- 2014-02-22T01:34:06.000Z  mundane_2.11/1.0.0-db04e5e/jars/mundane_2.11.jar 
- 2014-04-22T01:34:06.000Z  mundane_2.11/1.0.0-1c7dddc/jars/mundane_2.11.jar 
- 2014-03-22T01:34:06.000Z  mundane_2.11/1.0.0-7e702b2/jars/mundane_2.11.jar 
+&lt;&lt;&lt;
+val mundane = Seq("com.ambiata" % "mundane-io" %% "1.0.0-c5dab77")
+===
+val mundane = Seq("com.ambiata" % "mundane-io" %% "1.0.0-db04e5e")
+>>>
 ```
-
-- What is the latest?
 
 ---
 
 ## Timestamp
 
 ```
- Lastmodified              Name   
- 2014-03-22T01:34:06.000Z  mundane_2.11/1.0.0-20140322013124-c5dab77/jars/mundane_2.11.jar 
- 2014-04-22T01:34:06.000Z  mundane_2.11/1.0.0-20140422013124-db04e5e/jars/mundane_2.11.jar 
- 2014-05-22T01:34:06.000Z  mundane_2.11/1.0.0-20140522013124-1c7dddc/jars/mundane_2.11.jar 
- 2014-06-22T01:34:06.000Z  mundane_2.11/1.0.0-20140622013124-7e702b2/jars/mundane_2.11.jar 
+&lt;&lt;&lt;
+val mundane = Seq("com.ambiata" % "mundane-io" %% "1.0.0-20140322013124-c5dab77")
+===
+val mundane = Seq("com.ambiata" % "mundane-io" %% "1.0.0-20140422013124-db04e5e")
+>>>
 ```
 
 ---
@@ -906,7 +994,8 @@ layout: false
 # Conclusion
 
 - Correctness over convenience. Always.
-- Watching out for your future self!
+- Protect your future self!
+- Slides - http://charleso.github.com/scala-the-good-parts
 - Check out [Looper](http://www.imdb.com/title/tt1276104/). :)
 
 ---

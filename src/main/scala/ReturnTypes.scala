@@ -1,4 +1,4 @@
-object ValueDiscard {
+object ReturnTypes {
 
   trait IO[A] {
     def map[B](f: A => B): IO[B] = ???
@@ -10,14 +10,13 @@ object ValueDiscard {
   def load(id: String): IO[Dictionary] = ???
   def save(id: String, dictionary: Dictionary): IO[Unit] = ???
 
-  def setName(id: String): IO[Unit] = for {
-    dict <- load(id)
-  } yield save(id, dict)
-
-  def setName(id: String, name: String): IO[Unit] =
-    load(id).map(dictionary => save(id, dictionary.copy(name = name)))
+  def setName(id: String, name: String) =
+    load(id).map(dictionary =>
+      save(id, dictionary.copy(name = name))
+    )
 
   def main(args: Array[String]): Unit = {
-    // setName("a", "b").unsafePerformIO()
+     setName("a", "b").unsafePerformIO()
   }
+
 }
