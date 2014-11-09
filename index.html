@@ -8,29 +8,91 @@
       @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
       @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
 
-      body { font-family: 'Droid Serif'; }
+      body {
+        font-family: Futura, 'Yanone Kaffeesatz';
+      }
+      li {
+        font-size: 30px;
+        padding-top: 20px;
+      }
+      .remark-code {
+        font-size: 30px;
+      }
       h1, h2, h3 {
-        font-family: 'Yanone Kaffeesatz';
         font-weight: normal;
       }
       .inverse {
-        background: #272822;
-        color: #777872;
-        text-shadow: 0 0 20px #333;
+        background: #4795c6;
+        color: white;
       }
       .looper {
         background-image: url(images/looper2.jpg);
         background-size: 100%;
+        background-color: #83a8ce;
+        background-position: bottom;
+        color: white;
       }
       .question {
-        background: #f92672;
+        background: #76b242;
         color: white;
       }
       .inverse h1, .inverse h2 {
         color: #f3f3f3;
         line-height: 0.8em;
       }
-      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .image {
+        padding: 0px;
+        color: white;
+        background: #272822;
+
+        position: relative;
+      }
+      .image img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        /*height: 100%;*/
+        float: left;
+      }
+      .image h1, .image h2 {
+        position: absolute;
+        bottom: 0;
+        text-align: center;
+        left: 20px;
+      }
+      .image-white {
+        color: black;
+        background-color: white;
+      }
+      .remark-code, .remark-inline-code {
+        font-family: 'Ubuntu Mono';
+      }
+      .remark-slide-content {
+        padding: 10px 10px 10px 30px;
+      }
+      .hljs-default .hljs {
+        background-color: transparent;
+      }
+      .ambiata-full {
+        background-image: url(http://ambiata.com/images/ambiata_avatar.png);
+      }
+      /*
+      .ambiata-full h2 {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+      }
+      */
+      .ambiata {
+        background-image: url(http://ambiata.com/images/ambiata_avatar.png);
+        background-position: top right;
+        background-size: 100px;
+        /*-webkit-filter: grayscale(40%);*/
+      }
+      .code-small .remark-code {
+        font-size: 20px;
+      }
     </style>
   </head>
   <body>
@@ -39,6 +101,31 @@
 name: looper
 layout: true
 class: looper
+
+---
+name: image
+layout: true
+class: center, middle, image
+
+---
+name: image-white
+layout: true
+class: center, middle, image, image-white
+
+---
+name: ambiata
+layout: true
+class: ambiata
+
+---
+name: ambiata-full
+layout: true
+class: center, middle, ambiata-full
+
+---
+name: code-small
+layout: true
+class: code-small
 
 ---
 name: question
@@ -53,55 +140,40 @@ class: center, middle, inverse
 ---
 
 class: center, middle
+template: image
+
+<img src="images/js-good-parts-2.jpg" />
 
 # Scala, The Good Parts
 
-<img src="images/looper.jpg" width="600px" />
-
 ---
-layout: false
 
-# Me
+template: inverse
 
-<img src="images/ambiata.png" width="300px" />
-
-<img src="http://ambiata.com/images/ambiata_avatar.png" />
-
-- Charles O'Farrell
-- [@charlesofarrell](https://twitter.com/charlesofarrell)
+# Or
 
 ---
 
-## Scala, The Good Parts
+template: ambiata-full
 
-<img src="images/js-good-parts.jpg">
+# How We Do Shit At Ambiata
+## (To Stay Sane)
 
 ---
 
-## Scala, The Good Parts (jokes aside)
+template: image
 
 <a href="http://www.manning.com/bjarnason/">
-  <img src="images/book.jpg" width="300px" />
+  <img src="images/book.jpg" />
 </a>
 
----
-
-## Correctness
-
-- Protecting code from your future self
-
-<img src="images/looper2.jpg" />
+# Scala, The Good Parts
 
 ---
 
-## Grab bag
+template: looper
 
-- Default arguments
-- Implicit configuration
-- Value discard
-- Exhausive checking
-- Performance XXXX
-- Automatic releases
+# Correctness
 
 ---
 
@@ -114,129 +186,42 @@ template: inverse
 ---
 layout: false
 
-## Default arguments (Java)
-
-```java
-public void example(String host) {
-  example(host, 80)
-}
-
-public void example(String host, int port) {
-  ...
-}
-```
-
----
-
-## Default arguments (Scala)
-
-```scala
-def example(host: String, port: Int = 80) = ...
-```
-
----
-template: question
-
-## So what's the problem?
-
----
-layout: false
-
 ## Works today
 
 ```scala
 def getBytes(string: String): Array[Byte] =
   string.getBytes
 
-def elsewhere =
-  getBytes("hello")
+def elsewhere: Array[Byte] =
+  getBytes("hello 草")
 ```
 
 ---
 
-## Bugs!
+## Bugs
 
 ```scala
-def getBytes(string: String, charset: Charset = Charset("UTF-8")): Array[Byte] =
-  string.getBytes(charset)
+import scala.io._
 
-def elsewhere =
-  getBytes("hello")
+def getBytes(string: String,
+             codec: Codec = Codec.UTF8
+             ): Array[Byte] =
+  string.getBytes(codec.charSet)
+
+def elsewhere: Array[Byte] =
+  getBytes("hello 草")
 ```
 
 ---
 
-## Propagation
+template: ambiata
 
-```scala
-def something(i: Int = 10) =
-  ...
-```
-
----
-
-## Propagation (Part 2)
-
-```scala
-def something(i: Int = 10) =
-  ...
-
-def somethingElse(s: String, i: Int = 10) =
-  something(i)
-```
-
----
-
-## Propagation (Part 3)
-
-```scala
-def something(i: Int = 10) =
-  ...
-
-def somethingElse(s: String, i: Int = 10) =
-  something(i)
-
-def willItNeverEnd(s: String, i: Int = 10) =
-  somethingElse(s, i)
-```
-
----
-
-## Reasoning
+## Ambiata
 
 - Correctness is more important than convenience
 - Default arguments are a bug waiting to happen
 - Ambiata has a rule about _no_ default arguments
   - Pass everything explicitly
-
----
-
-## Real use cases
-
-Instead of:
-
-```scala
-connectHTTP(host: String, port: Int = 80, ssl: Boolean = false)
-```
-
-Why not:
-
-```scala
-connectHTTP(host: String)
-connectHTTPS(host: String)
-connectHTTPPort(host: String, port: Int)
-```
-
----
-
-# Another example
-
-```scala
-object Configuration {
-  def production(address: InetSocketAddress): Configuration = ...
-  def testing: Configuration = ...
-}
-```
 
 ---
 
@@ -247,7 +232,6 @@ object Configuration {
   - https://github.com/typelevel/wartremover/issues/116
 - Bugs in the wild
   - https://issues.scala-lang.org/browse/SI-3322
-  - TODO FIND SOME MORE!!!
 
 ---
 
@@ -276,7 +260,8 @@ layout: false
 ```scala
 object Encoder {
 
-  def getBytes(s: String)(implicit codec: Codec): Array[Byte] =
+  def getBytes(s: String)
+              (implicit codec: Codec): Array[Byte] =
     s.getBytes(codec.charSet)
 }
 ```
@@ -302,8 +287,11 @@ object Example {
 ## Can you move code?
 
 - Move the function from file A to B
-- Does this have the same behaviour/meaning?
+- Does it have the same behaviour/meaning?
   - And would you notice while refactoring?
+---
+
+## Example
 
 ```scala
 import scala.io._
@@ -335,7 +323,9 @@ def run(s: String)(implicit ec: ExecutionContext) = ...
 
 object Pool {
   implicit val tc: ExecutionContext =
-    ExecutionContext.fromExecutor(java.util.concurrent.Executors.newCachedThreadPool())
+    ExecutionContext.fromExecutor(
+      Executors.newCachedThreadPool()
+    )
 }
 
 import Pool._
@@ -372,20 +362,14 @@ template: question
 ```scala
 def run(s: String, ec: ExecutionContext) = ...
 
-object Pool {
-  def withEC[A](f: ExecutionContext => A): A = {
-    val pool = java.util.concurrent.Executors.newCachedThreadPool
-    val result = f(ExecutionContext.fromExecutor(pool))
-    pool.shutdown()
-    result
-  }
-}
-
 object Main {
+
   def args(args: Array[String]): Unit = {
-    Pool.withEC { ec =>
+    val pool = Pool.create
+    try
       run("hello", ec)
-    }
+    finally
+      pool.shutdown
   }
 }
 ```
@@ -394,7 +378,7 @@ object Main {
 
 template: ambiata
 
-## What we do at Ambiata
+## Ambiata
 
 - Pass arguments manually
   - Crazy!
@@ -427,15 +411,18 @@ layout: false
 
 ```scala
 sealed trait Encoding
+
 case object StringEncoding extends Encoding
+
 case object IntEncoding extends Encoding
 ```
 
 ```scala
-def asString(encoding: Encoding): String = encoding match {
-  case StringEncoding => "string"
-  case IntEncoding    => "int"
-}
+def asString(encoding: Encoding): String =
+  encoding match {
+    case StringEncoding => "string"
+    case IntEncoding    => "int"
+  }
 ```
 
 ---
@@ -452,21 +439,18 @@ template: question
 case object DateEncoding extends Encoding
 ```
 
----
-
-## Boom!
-
 ```scala
 > asString(DateEncoding)
 scala.matchError: DateEncoding
   at .asString()
 ```
-
 ---
 
 template: looper
 
 ---
+
+template: code-small
 
 ## Warnings are useless
 
@@ -486,9 +470,9 @@ template: looper
 scalacOptions in Compile ++= Seq("-Xfatal-warnings")
 ```
 
-- Scala equivalent of `-Wall -Werror`
-
 ---
+
+template: code-small
 
 ## Phew
 
@@ -505,10 +489,11 @@ scalacOptions in Compile ++= Seq("-Xfatal-warnings")
 ## Wildcards are bad too
 
 ```scala
-def asString(encoding: Encoding): String = encoding match {
-  case StringEncoding => "string"
-  case _              => "int"
-}
+def asString(encoding: Encoding): String =
+  encoding match {
+    case StringEncoding => "string"
+    case _              => "int"
+  }
 ```
 
 ```
@@ -523,15 +508,17 @@ res0: String = int
 - Exhaustive checking in Scala is not perfect
 
 ```scala
-def asString(encoding: Encoding): String = encoding match {
-  case StringEncoding if ... => "string"
-}
+def asString(encoding: Encoding): String =
+  encoding match {
+    case StringEncoding if ... => "string"
+  }
 ```
 
 ```
 > asString(DateEncoding)
-scala.MatchError: DateEncoding (of class PatternMatching$DateEncoding$)
-        at PatternMatching$.asString2(PatternMatching.scala:13)
+scala.MatchError: DateEncoding
+  (of class PatternMatching$DateEncoding$)
+   at PatternMatching$.asString2(PatternMatching.scala:13)
 ```
 
 ---
@@ -540,10 +527,11 @@ scala.MatchError: DateEncoding (of class PatternMatching$DateEncoding$)
 
 ```scala
 trait Encoding {
-  def fold[A](s: => A, i: => A): A = this match {
-    case StringEncoding => s
-    case IntEncoding    => i
-  }
+  def fold[A](s: => A, i: => A): A =
+    this match {
+      case StringEncoding => s
+      case IntEncoding    => i
+    }
 }
 
 def asString(encoding: Encoding): String =
@@ -556,11 +544,12 @@ def asString(encoding: Encoding): String =
 
 ```scala
 trait Encoding {
-  def fold[A](s: => A, i: => A, d: => A): A = this match {
-    case StringEncoding => s
-    case IntEncoding    => i
-    case DateEncoding   => d
-  }
+  def fold[A](s: => A, i: => A, d: => A): A =
+    this match {
+      case StringEncoding => s
+      case IntEncoding    => i
+      case DateEncoding   => d
+    }
 }
 
 def asString(encoding: Encoding): String =
@@ -624,6 +613,8 @@ scalacOptions in Compile ++= Seq(
 
 ---
 
+template: code-small
+
 ## Warning
 
 ```
@@ -645,6 +636,8 @@ scalacOptions in Compile ++= Seq(
 
 ---
 
+template: code-small
+
 ## Much better
 
 ```
@@ -658,7 +651,6 @@ scalacOptions in Compile ++= Seq(
 ## Fixed
 
 ```scala
-
 def setName(id: String, name: String): IO[Unit] =
   load(id).flatMap(dictionary =>
     save(id, dictionary.copy(name = name))
@@ -669,7 +661,7 @@ def setName(id: String, name: String): IO[Unit] =
 
 ## Burned in Real Life
 
-- https://github.com/ambiata/mundane/commit/25ec5a32b952f1e8ce4f0516a3c52e4520ae05d5
+- [github.com/ambiata/mundane/commit/ 25ec5a32b952f1e8ce4f0516a3c52e4520ae05d5](https://github.com/ambiata/mundane/commit/25ec5a32b952f1e8ce4f0516a3c52e4520ae05d5)
 
 ---
 
@@ -684,16 +676,11 @@ template: inverse
 ## Wat
 
 ```scala
-def foo: String =
-  "1"
+def foo: String = "1"
 
-def bar: Int
-  1
+def bar: Int = 1
 
-def wat: Boolean
-  foo == bar
-
-scala> wat
+scala> foo == bar
 res0: Boolean = false
 ```
 
@@ -708,14 +695,11 @@ template: question
 ```scala
 import scalaz._, Scalaz._
 
-def foo: String =
-  "1"
+def foo: String = "1"
 
-def bar: Int
-  1
+def bar: Int = 1
 
 // Doesn't compile
-// def phew: Boolean
 //  foo === bar
 ```
 
@@ -725,7 +709,7 @@ def bar: Int
 
 ```scala
 trait Seq[A] {
-  def contains(elem: Any): Boolean = { ... }
+  def contains(elem: Any): Boolean = ...
 }
 
 scala> List("1").contains(1)
@@ -748,18 +732,18 @@ template: inverse
 ## What is the return type?
 
 ```scala
-def foo(strings: List[String]) = for {
+def foo(strings: List[String]) =
+  for {
     s &lt;- strings
   } yield bar(s)
 
-val size = foo(List("a", "b", "c")).size
+> foo(List("a", "b", "c")).size
 ```
 
 ---
 template: question
 
 ## What happens if 'bar' changes?
-```
 
 ---
 
@@ -769,11 +753,13 @@ template: looper
 ## Always use return types
 
 ```scala
-def foo1(strings: List[String]): List[String] = for {
+def foo1(strings: List[String]): List[String] =
+  for {
     s &lt;- strings
   } yield bar1(s)
 
-def foo2(strings: List[String]): List[List[String]] = for {
+def foo2(strings: List[String]): List[List[String]] =
+  for {
     s &lt;- strings
   } yield bar2(s)
 ```
@@ -806,10 +792,12 @@ layout:false
 ## What is the runtime performance of this function?
 
 ```scala
-def foo[A](a: A, s: Seq[A]): Seq[A] = { ... }
+def foo[A](a: A, s: Seq[A]): Seq[A] = ...
 
 foo(1, (1 to 10).toList)
 ```
+
+---
 
 ## What about now?
 
@@ -820,13 +808,35 @@ def prepend[A](a: A, s: Seq[A]): Seq[A] =
 prepend(1, (1 to 10).toList)
 ```
 
+---
+
 ## What about NOW?
 
 ```scala
-def foo[A](s: Seq[A]): Seq[A] =
+def foo[A](s: Seq[A]): Int =
   s.size
 
 foo(Stream.continually(1))
+```
+
+---
+template: question
+
+## Say what you mean
+
+---
+
+## Say what you mean
+
+```scala
+def append[A](a: A, s: List[A]): List[A] =
+  a :: s
+
+def prepend[A](a: A, s: Vector[A]): Vector[A] =
+  s :+ a
+
+def plusOne[F[_] : Functor](l : F[Int]): F[Int] =
+  l.map(_ + 1)
 ```
 
 ---
@@ -837,6 +847,7 @@ template: ambiata
 
 - _Never_ use `Seq`
   - Honestly we mostly use `List`
+  - Depends on requirements
 
 ---
 
@@ -914,7 +925,9 @@ import com.ambiata.promulgate.project.ProjectPlugin._
 
 object build extends Build {
   lazy val core = Project(
-    settings = promulgate.library("com.ambiata.something", "ambiata-oss")
+    settings = promulgate.library(
+      "com.ambiata.something", "ambiata-oss"
+    )
   )
 }
 ```
@@ -932,9 +945,9 @@ object build extends Build {
 
 ---
 
-## Conflict
+template: code-small
 
-- Which one do you take?
+## Conflict
 
 ```
 &lt;&lt;&lt;
@@ -944,7 +957,11 @@ val mundane = Seq("com.ambiata" % "mundane-io" %% "1.0.0-db04e5e")
 >>>
 ```
 
+- Which one do you keep?
+
 ---
+
+template: code-small
 
 ## Timestamp
 
@@ -966,26 +983,11 @@ val mundane = Seq("com.ambiata" % "mundane-io" %% "1.0.0-20140422013124-db04e5e"
 
 ---
 
-## SBT Tip: Source dependencies
-
-```scala
-object source extends Build {
-
-  lazy val ref =
-    Project("ivory", file("."))
-      .dependsOn(RootProject(file("../mundane")))
-}
-```
-
----
-
 
 
 template: inverse
 
 # Conclusion
-
-<img src="images/luke.jpg" />
 
 ---
 
@@ -995,16 +997,17 @@ layout: false
 
 - Correctness over convenience. Always.
 - Protect your future self!
-- Slides - http://charleso.github.com/scala-the-good-parts
-- Check out [Looper](http://www.imdb.com/title/tt1276104/). :)
+- http://charleso.github.com/scala-the-good-parts
 
 ---
 
-## Read this. Seriously.
+template: image
 
 <a href="http://www.manning.com/bjarnason/">
-  <img src="images/book.jpg" width="300px" />
+  <img src="images/book2.jpg" />
 </a>
+
+## Read this. Seriously.
 
 
 

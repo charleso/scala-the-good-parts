@@ -7,7 +7,7 @@ object PatternMatching {
 
   def asString(encoding: Encoding): String = encoding match {
     case _: StringEncoding.type  => "string"
-    case _ => ""
+    case _ => "int"
   }
 
   def asString2(encoding: Encoding): String = encoding match {
