@@ -236,6 +236,8 @@ def elsewhere: Array[Byte] =
   getBytes("hello 草")
 ```
 
+- TODO Reverse/fix these slides
+
 ---
 
 template: looper
@@ -316,7 +318,7 @@ object Example {
 
 ## Can you move code?
 
-- Move the function from file A to B
+- Move the function from A to B
 - Does it have the same behaviour/meaning?
   - And would you notice while refactoring?
 ---
@@ -346,6 +348,12 @@ template: looper
 
 ---
 
+template: question
+
+# Move the function from A to B
+
+---
+
 ## Implicit resources
 
 ```scala
@@ -367,6 +375,8 @@ object Main {
   }
 }
 ```
+
+- TODO TODO Aka has a context object, slick has DB connections
 
 ---
 
@@ -533,9 +543,7 @@ res0: String = int
 
 ---
 
-## Word of warning
-
-- Exhaustive checking in Scala is not perfect
+## Exhaustive checking in Scala is not perfect
 
 ```scala
 def asString(encoding: Encoding): String =
@@ -626,6 +634,8 @@ def setName(id: String, name: String): IO[IO[Unit]] =
       save(id, dictionary.copy(name = name))
     )
 ```
+
+- TALK ABOUT IMPLICIT CAST TO UNIT
 
 ---
 
@@ -795,6 +805,12 @@ def foo2(strings: List[String]): List[List[String]] =
     s &lt;- strings
   } yield bar2(s)
 ```
+
+- TODO Another example  eg.
+
+val l = List("a", 1)
+val x = l.foldLeft(x)(....)
+x === y (infers to any)
 
 ---
 
