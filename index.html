@@ -396,6 +396,7 @@ object Main {
 
   def args(args: Array[String]): Unit = {
     val pool = Pool.create
+    val ec = ExecutionContext.fromExecutor(pool)
     try
       run("hello", ec)
     finally
@@ -621,7 +622,7 @@ def setName(id: Int, name: String): IO[Unit] =
 
 ```scala
 
-def setName(id: String, name: String): IO[IO[Unit]] =
+def setName(id: Int, name: String): IO[IO[Unit]] =
     load(id).map(dictionary =>
       save(id, dictionary.copy(name = name))
     )
@@ -908,7 +909,7 @@ layout:false
 - ScalaCheck is the norm
   - Only a handful of "unit" tests
 - Has changed my life
-- So important it deserves it's own talk
+- So important it deserves its own talk
   - Declan is speaking next month
 - Do it. Seriously.
 
