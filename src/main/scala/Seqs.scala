@@ -22,6 +22,8 @@ object Seqs {
     println(sayWhatYouMean((1 to 10).toList))
 
     println(foo(List("a", "b", "c")))
+    val x = List(())
+    println(x.exists(_ === 5))
 //    println(foo(Stream.continually("x")))
   }
 }

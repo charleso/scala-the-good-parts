@@ -467,7 +467,7 @@ object Main {
 
 ---
 
-## Crazy talk
+## More crazy talk
 
 ```scala
 def run(s: String, ec: ExecutionContext) = ...
@@ -475,12 +475,15 @@ def run(s: String, ec: ExecutionContext) = ...
 object Main {
 
   def args(args: Array[String]): Unit = {
-    val pool = Pool.create
-    val ec = ExecutionContext.fromExecutor(pool)
-    try
-      run("hello", ec)
-    finally
-      pool.shutdown
+    // How do we get an ExecutionContext here?
+    run("hello", ???)
+  }
+
+  object Pool {
+
+    def runWith[A](f: ExecutionContext => A): A = {
+      ...
+    }
   }
 }
 ```
@@ -905,6 +908,12 @@ template: looper
 
 ---
 
+template: rule
+
+# Rule 3: Changing semantics of function should give compiler errors
+
+---
+
 template: ambiata
 
 # Ambiata
@@ -960,9 +969,9 @@ foo(Stream.continually(1))
 
 ---
 
-template: question
+template: rule
 
-## Rule 3: Abstraction should reduce possibilities, not add to them
+## Rule 4: Abstraction should reduce possibilities, not add to them
 
 ---
 
