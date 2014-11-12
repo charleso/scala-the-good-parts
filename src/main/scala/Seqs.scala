@@ -21,14 +21,7 @@ object Seqs {
     println(prepend("a", (1 to 10).toList))
     println(sayWhatYouMean((1 to 10).toList))
 
-
-    println(foo("a", List("a", "b", "c")))
+    println(foo(List("a", "b", "c")))
 //    println(foo(Stream.continually("x")))
-  }
-
-
-
-  def foo[F[_]: Functor](s: F[Int]): F[Int] = {
-    s.map(_ + 1)
   }
 }

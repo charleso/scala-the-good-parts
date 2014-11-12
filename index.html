@@ -36,6 +36,10 @@
         background: #76b242;
         color: white;
       }
+      .rule {
+        background: #ee2a24;
+        color: white;
+      }
       .inverse h1, .inverse h2 {
         color: #f3f3f3;
         line-height: 0.8em;
@@ -142,6 +146,11 @@ layout: true
 class: center, middle, question
 
 ---
+name: rule
+layout: true
+class: center, middle, rule
+
+---
 name: inverse
 layout: true
 class: center, middle, inverse
@@ -157,9 +166,13 @@ template: image
 
 ---
 
-template: inverse
+template: image
 
-# Or
+<a href="http://www.manning.com/bjarnason/">
+  <img src="images/book.jpg" />
+</a>
+
+# Scala, The Good Parts
 
 ---
 
@@ -185,25 +198,9 @@ template: ambiata-full
 
 template: image
 
-<a href="http://www.manning.com/bjarnason/">
-  <img src="images/book.jpg" />
-</a>
-
-# Scala, The Good Parts
-
----
-
-template: image
-
-<img src="http://www.emersonkent.com/images/ten_commandments.jpg" height="700px" />
+<img src="images/10_commandments.jpeg" height="700px" />
 
 # Guidelines
-
----
-
-template: looper
-
-# Correctness
 
 ---
 
@@ -216,33 +213,69 @@ template: inverse
 ---
 layout: false
 
-## Works today
+## Java Land
 
-```scala
-import scala.io._
+```java
+public class String {
 
-def getBytes(string: String): Array[Byte] =
-  string.getBytes
+  public byte[] getBytes() {
+    return getBytes(Charset.defaultCharset());
+  }
 
-def elsewhere: Array[Byte] =
-  getBytes("hello 草")
+  public byte[] getBytes(Charset charset) {
+    ...
+  }
+}
 ```
 
 ---
 
-## Breaks tomorrow
+## Scala to the rescue
 
 ```scala
 import scala.io._
 
 def getBytes(string: String,
-             codec: Codec = Codec.UTF8
+             codec: Codec = Codec.defaultCharsetCodec
              ): Array[Byte] =
   string.getBytes(codec.charSet)
-
-def elsewhere: Array[Byte] =
-  getBytes("hello 草")
 ```
+
+---
+
+template: question
+
+# Not so fast...
+
+---
+
+## Scala to the rescue
+
+```scala
+import scala.io._
+
+object SomewhereElse {
+
+  def whatNow(s: String,
+              codec: Codec = ???): Array[Byte] =
+    getBytes(s.toUpperCase, codec)
+}
+
+object OuterRim {
+
+  def farOut(s: String,
+             codec: Codec = ???): Array[Byte] =
+    SomewhereElse.whatNow(s.substring(1), codec)
+}
+```
+
+---
+
+## Ask yourself
+
+- What do you do about wanting to re-use the default?
+- Will someone get a compiler error if you add one?
+- How easy is it to forget?
 
 ---
 
@@ -250,12 +283,51 @@ template: looper
 
 ---
 
+template: question
+
+# At Ambiata we have this crazy technique called...
+
+---
+
+template: question
+
+# ...function arguments
+
+---
+
+## Crazy talk
+
+```scala
+import scala.io._
+
+def getBytes(string: String,
+             codec: Codec): Array[Byte] =
+  string.getBytes(codec.charSet)
+
+
+object SomewhereElse {
+
+  def whatNow(s: String,
+              codec: Codec): Array[Byte] =
+    getBytes(s.toUpperCase, codec)
+}
+```
+
+---
+
+template: rule
+
+# Rule 1: Thinking about code is important
+
+---
+
 template: ambiata
 
 ## Ambiata
 
-- Correctness is more important than convenience
 - Default arguments are bugs waiting to happen
+  - [github.com/ambiata/ivory/commit/ 934b63a30c62bd7ff019027858dbcf4493f0a338](https://github.com/ambiata/ivory/commit/934b63a30c62bd7ff019027858dbcf4493f0a338)
+  - Cost us "a bazillion dollars"
 - We have a rule about _no_ default arguments
   - Pass everything explicitly
 
@@ -324,9 +396,10 @@ object Example {
 
 ## Can you move code?
 
-- Move the function from file A to B
+- Move the function from A to B
 - Does it have the same behaviour/meaning?
   - And would you notice while refactoring?
+
 ---
 
 ## Example
@@ -354,6 +427,12 @@ template: looper
 
 ---
 
+template: rule
+
+# Rule 2: Moving code should not break silently
+
+---
+
 ## Implicit resources
 
 ```scala
@@ -369,7 +448,7 @@ object Pool {
 import Pool._
 
 object Main {
-  def args(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
     run("hello")
     // Will this program terminate?
   }
@@ -382,16 +461,9 @@ object Main {
 
 - Who is responsible for closing/cleaning-up resources?
 - http://stackoverflow.com/questions/25879496/how-to-exit-a-program-properly-when-using-scalaz-futures-and-the-timed-function
-
----
-template: question
-
-# At Ambiata we have this crazy technique...
-
----
-template: question
-
-# ...function arguments
+- Examples in the wild:
+  - Akka has a context object
+  - Slick has DB connections
 
 ---
 
@@ -542,9 +614,7 @@ res0: String = int
 
 ---
 
-## Word of warning
-
-- Exhaustive checking in Scala is not perfect
+## Exhaustive checking in Scala is not perfect
 
 ```scala
 def asString(encoding: Encoding): String =
@@ -622,6 +692,30 @@ def setName(id: Int, name: String): IO[Unit] =
   load(id).map(dictionary => 
     save(id, dictionary.copy(name = name))
   )
+```
+
+---
+
+template: question
+
+## Section 6.26.1 - Value Discard
+
+<i>
+  If e has some value type and the expected type is Unit, <br/>
+  e is converted to the expected type by embedding it in the term { e; () }.
+</i>
+
+---
+
+## What really happened
+
+```scala
+
+def setName(id: Int, name: String): IO[Unit] =
+    load(id).map(dictionary =>
+      save(id, dictionary.copy(name = name))
+      ()
+    )
 ```
 
 ---
@@ -865,23 +959,33 @@ foo(Stream.continually(1))
 ```
 
 ---
+
 template: question
 
-## Say what you mean
+## Rule 3: Abstraction should reduce possibilities, not add to them
 
 ---
 
-## Say what you mean
+## What is more "abstract"?
 
 ```scala
-def append[A](a: A, s: List[A]): List[A] =
-  a :: s
+def foo[A](s: Seq[A]): Seq[A] = ...
 
-def prepend[A](a: A, s: Vector[A]): Vector[A] =
-  s :+ a
+def foo[A](l: List[A]): List[A] = ...
 
-def plusOne[F[_] : Functor](l : F[Int]): F[Int] =
-  l.map(_ + 1)
+```
+
+---
+
+## What is more "abstract"?
+
+```scala
+def foo(s: Seq[Int]): Seq[Int] = ...
+
+def foo(l: List[Int]): List[Int] = ...
+
+def foo[F[_] : Functor](l : F[Int]): F[Int] = ...
+
 ```
 
 ---
@@ -893,6 +997,8 @@ template: ambiata
 - _Never_ use `Seq`
   - Honestly we mostly use `List`
   - Depends on requirements
+- Paul Phillips
+  - http://www.youtube.com/watch?v=TS1lpKBMkgg
 
 ---
 
@@ -920,6 +1026,25 @@ layout:false
 - So important it deserves its own talk
   - Declan is speaking next month
 - Do it. Seriously.
+- John Hughes - Testing the Hard Stuff and Staying Sane
+  - http://www.youtube.com/watch?v=zi0rHwfiX1Q
+
+---
+
+## Teaser
+
+```scala
+import org.specs2._
+import org.scalacheck._
+
+class MySpec extends Specification with ScalaCheck {
+  def is =
+
+  "List reverse" ! check { (a: String ) =>
+    a.reverse.reverse ==== a
+  }
+}
+```
 
 ---
 
@@ -927,7 +1052,11 @@ layout:false
 
 
 
+template: image
 
+<img src="images/something-different.jpg" height="700" />
+
+---
 
 template: inverse
 
@@ -1026,6 +1155,14 @@ val mundane = Seq("com.ambiata" % "mundane-io" %% "1.0.0-20140422013124-db04e5e"
 template: inverse
 
 # Conclusion
+
+---
+
+template: image
+
+<img src="images/darth.jpeg" />
+
+# Scala's Dark Side
 
 ---
 
