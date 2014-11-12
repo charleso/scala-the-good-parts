@@ -416,6 +416,12 @@ object Example2 {
   def doSomething: Array[Byte] =
     Encoder.getBytes("hello 草")
 }
+
+
+object Codec {
+  implicit def fallbackSystemCodec:Codec =
+    Codec.defaultCharsetCodec
+}
 ```
 
 ---
@@ -907,7 +913,11 @@ layout:false
 ```scala
 def foo[A](a: A, s: Seq[A]): Seq[A] = ...
 
-foo(1, (1 to 100).toList)
+
+
+(1 to 100).toList.foldRight(List())(foo)
+
+(1 to 100).toVector.foldRight(Vector())(foo)
 ```
 
 ---
@@ -918,7 +928,8 @@ foo(1, (1 to 100).toList)
 def prepend[A](a: A, s: Seq[A]): Seq[A] =
   s :+ a
 
-prepend(1, (1 to 100).toList)
+
+(1 to 100).toList.foldRight(List())(foo)
 ```
 
 ---
